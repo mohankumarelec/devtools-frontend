@@ -8,6 +8,10 @@
 
 // --- Side-effect imports: order matters ---
 
+// 0. DevTools design tokens (CSS variables for theming)
+import '../../design_system_tokens.css';
+import '../../application_tokens.css';
+
 // 1. DOM patches (Element.createChild, Event.consume) used everywhere in DevTools UI
 import '../../ui/dom_extension/dom_extension.js';
 
@@ -207,104 +211,49 @@ function showConnectionUI(): void {
   container.innerHTML = `
     <div class="connection-card">
       <h1>Remote Browser</h1>
-      <p>Connect to a Chrome instance running with <code>--remote-debugging-port=9222</code></p>
+      <p>Enter the Chrome DevTools WebSocket URL to connect.</p>
 
       <div class="input-group">
-        <label for="debug-url">Chrome Debug URL</label>
-        <input type="text" id="debug-url" placeholder="localhost:9222" value="localhost:9222" />
+        <label for="ws-url">WebSocket URL</label>
+        <input type="text" id="ws-url" placeholder="localhost:9222/devtools/page/TARGET_ID" />
       </div>
 
-      <button id="fetch-targets" class="primary-btn">Find Targets</button>
+      <button id="connect-btn" class="primary-btn">Connect</button>
 
-      <div id="targets-list" class="targets-list" style="display:none"></div>
       <div id="connection-error" class="error-msg" style="display:none"></div>
 
       <div class="help-text">
         <details>
-          <summary>How to start Chrome with remote debugging</summary>
-          <pre>google-chrome --remote-debugging-port=9222</pre>
-          <p>Or on macOS:</p>
-          <pre>/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222</pre>
+          <summary>How to get the WebSocket URL</summary>
+          <pre>curl http://localhost:9222/json</pre>
+          <p>Copy the <code>webSocketDebuggerUrl</code> value from the response and paste above (omit the <code>ws://</code> prefix).</p>
         </details>
       </div>
     </div>
   `;
 
-  document.getElementById('fetch-targets')?.addEventListener('click', fetchTargets);
-  document.getElementById('debug-url')?.addEventListener('keyup', (e: Event) => {
-    if ((e as KeyboardEvent).key === 'Enter') {
-      fetchTargets();
-    }
-  });
-}
+  const connectBtn = document.getElementById('connect-btn');
+  const wsInput = document.getElementById('ws-url') as HTMLInputElement;
 
-async function fetchTargets(): Promise<void> {
-  const urlInput = document.getElementById('debug-url') as HTMLInputElement;
-  const targetsList = document.getElementById('targets-list') as HTMLElement;
-  const errorEl = document.getElementById('connection-error') as HTMLElement;
-
-  errorEl.style.display = 'none';
-  targetsList.style.display = 'none';
-
-  const baseUrl = urlInput.value.trim();
-  if (!baseUrl) {
-    return;
-  }
-
-  try {
-    const proxyUrl = `/debug-proxy?host=${encodeURIComponent(baseUrl)}&endpoint=/json`;
-    const resp = await fetch(proxyUrl);
-    const targets = await resp.json() as Array<{
-      id: string;
-      title: string;
-      url: string;
-      type: string;
-      webSocketDebuggerUrl?: string;
-    }>;
-
-    const pages = targets.filter(t => t.type === 'page');
-    if (pages.length === 0) {
-      errorEl.textContent = 'No page targets found. Make sure a tab is open in Chrome.';
-      errorEl.style.display = 'block';
+  const doConnect = (): void => {
+    const raw = wsInput.value.trim();
+    if (!raw) {
       return;
     }
+    // Strip ws:// or wss:// prefix if provided
+    const wsUrl = raw.replace(/^wss?:\/\//, '');
+    const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set(scheme, wsUrl);
+    window.location.href = newUrl.toString();
+  };
 
-    targetsList.innerHTML = '<h3>Select a target:</h3>';
-    for (const target of pages) {
-      const item = document.createElement('button');
-      item.className = 'target-item';
-      item.innerHTML = `
-        <span class="target-title">${escapeHtml(target.title || 'Untitled')}</span>
-        <span class="target-url">${escapeHtml(target.url)}</span>
-      `;
-      item.addEventListener('click', () => {
-        connectToTarget(baseUrl, target);
-      });
-      targetsList.appendChild(item);
+  connectBtn?.addEventListener('click', doConnect);
+  wsInput?.addEventListener('keyup', (e: Event) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
+      doConnect();
     }
-    targetsList.style.display = 'block';
-  } catch (err) {
-    errorEl.textContent = `Failed to connect to ${baseUrl}. Make sure Chrome is running with --remote-debugging-port and CORS is not blocking the request.`;
-    errorEl.style.display = 'block';
-  }
-}
-
-function connectToTarget(
-  baseUrl: string,
-  target: {id: string; webSocketDebuggerUrl?: string},
-): void {
-  let wsUrl: string;
-  if (target.webSocketDebuggerUrl) {
-    const parsed = new URL(target.webSocketDebuggerUrl);
-    wsUrl = `${parsed.host}${parsed.pathname}`;
-  } else {
-    wsUrl = `${baseUrl}/devtools/page/${target.id}`;
-  }
-
-  const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const newUrl = new URL(window.location.href);
-  newUrl.searchParams.set(scheme, wsUrl);
-  window.location.href = newUrl.toString();
+  });
 }
 
 function showDisconnected(message: string): void {

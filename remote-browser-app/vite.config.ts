@@ -164,6 +164,8 @@ export default defineConfig({
   root: __dirname,
   resolve: {
     alias: [
+      {find: /^\.\.\/\.\.\/design_system_tokens\.css$/, replacement: path.join(frontEndDir, 'design_system_tokens.css')},
+      {find: /^\.\.\/\.\.\/application_tokens\.css$/, replacement: path.join(frontEndDir, 'application_tokens.css')},
       {find: /^\.\.\/\.\.\/core\/(.*)/, replacement: path.join(frontEndDir, 'core/$1')},
       {find: /^\.\.\/\.\.\/generated\/(.*)/, replacement: path.join(frontEndDir, 'generated/$1')},
       {find: /^\.\.\/\.\.\/ui\/(.*)/, replacement: path.join(frontEndDir, 'ui/$1')},
@@ -189,7 +191,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
   },
   server: {
     port: 5173,
