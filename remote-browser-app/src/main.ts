@@ -86,7 +86,7 @@ async function boot(): Promise<void> {
       Root.ExperimentNames.ExperimentName.INSTRUMENTATION_BREAKPOINTS,
       'Enable instrumentation breakpoints');
 
-  Root.DevToolsContext.setGlobalInstance(context as Root.DevToolsContext.WritableDevToolsContext);
+  Root.DevToolsContext.setGlobalInstance(context);
 
   // --- Phase 3: i18n ---
   i18n.DevToolsLocale.DevToolsLocale.instance({
@@ -251,8 +251,8 @@ function showConnectionUI(): void {
   };
 
   connectBtn?.addEventListener('click', doConnect);
-  wsInput?.addEventListener('keyup', (e: Event) => {
-    if ((e as KeyboardEvent).key === 'Enter') {
+  wsInput?.addEventListener('keyup', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
       doConnect();
     }
   });
