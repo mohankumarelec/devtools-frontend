@@ -8,27 +8,29 @@
 
 // --- Side-effect imports: order matters ---
 
+// --- Side-effect imports: order matters ---
+
 // 0. DevTools design tokens (CSS variables for theming)
-import '../../design_system_tokens.css';
-import '../../application_tokens.css';
+import '../../out/Default/gen/front_end/design_system_tokens.css';
+import '../../out/Default/gen/front_end/application_tokens.css';
 
 // 1. DOM patches (Element.createChild, Event.consume) used everywhere in DevTools UI
-import '../../ui/dom_extension/dom_extension.js';
+import '../../out/Default/gen/front_end/ui/dom_extension/dom_extension.js';
 
 // 2. Register InputModel so ScreencastView can forward mouse/keyboard
-import '../../panels/screencast/screencast.js';
+import '../../out/Default/gen/front_end/panels/screencast/screencast.js';
 
 // 3. Register only the settings needed for screencast
 import './register-settings.js';
 
 // --- Regular imports ---
-import * as Common from '../../core/common/common.js';
-import * as Host from '../../core/host/host.js';
-import * as i18n from '../../core/i18n/i18n.js';
-import * as Root from '../../core/root/root.js';
-import * as SDK from '../../core/sdk/sdk.js';
-import * as UI from '../../ui/legacy/legacy.js';
-import * as ThemeSupport from '../../ui/legacy/theme_support/theme_support.js';
+import * as Common from '../../out/Default/gen/front_end/core/common/common.js';
+import * as Host from '../../out/Default/gen/front_end/core/host/host.js';
+import * as i18n from '../../out/Default/gen/front_end/core/i18n/i18n.js';
+import * as Root from '../../out/Default/gen/front_end/core/root/root.js';
+import * as SDK from '../../out/Default/gen/front_end/core/sdk/sdk.js';
+import * as UI from '../../out/Default/gen/front_end/ui/legacy/legacy.js';
+import * as ThemeSupport from '../../out/Default/gen/front_end/ui/legacy/theme_support/theme_support.js';
 
 import {ScreencastOnlyApp, ScreencastOnlyAppProvider} from './screencast-only-app.js';
 
@@ -56,7 +58,7 @@ async function boot(): Promise<void> {
     forceNew: true,
     ...settingsStorage,
     settingRegistrations: Common.SettingRegistration.getRegisteredSettings(),
-    logSettingAccess: () => {},
+    logSettingAccess: async () => {},
     runSettingsMigration: false,
   });
   context.set(Common.Settings.Settings, settings);

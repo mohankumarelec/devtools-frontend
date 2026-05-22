@@ -1,7 +1,7 @@
-import * as SDK from '../../core/sdk/sdk.js';
-import * as UI from '../../ui/legacy/legacy.js';
+import * as SDK from '../../out/Default/gen/front_end/core/sdk/sdk.js';
+import * as UI from '../../out/Default/gen/front_end/ui/legacy/legacy.js';
 
-import {ScreencastView} from '../../panels/screencast/ScreencastView.js';
+import {ScreencastView} from '../../out/Default/gen/front_end/panels/screencast/ScreencastView.js';
 
 export class ScreencastOnlyApp implements UI.App.App,
                                           SDK.TargetManager.SDKModelObserver<SDK.ScreenCaptureModel.ScreenCaptureModel> {

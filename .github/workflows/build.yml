@@ -1,0 +1,106 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout depot_tools
+        run: git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+
+      - name: Add depot_tools to PATH
+        run: echo $(realpath depot_tools) >> $GITHUB_PATH
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          path: devtools/devtools-frontend
+
+      - name: Create gclient config
+        run: gclient config --unmanaged https://chromium.googlesource.com/devtools/devtools-frontend
+        working-directory: devtools
+
+      - name: Sync dependencies
+        run: gclient sync
+        working-directory: devtools/devtools-frontend
+
+      - name: Generate build files
+        run: gn gen out/Default
+        working-directory: devtools/devtools-frontend
+
+      - name: Build DevTools Frontend
+        run: autoninja -C out/Default devtools_all_files
+        working-directory: devtools/devtools-frontend
+
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout depot_tools
+        run: git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+
+      - name: Add depot_tools to PATH
+        run: echo $(realpath depot_tools) >> $GITHUB_PATH
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          path: devtools/devtools-frontend
+
+      - name: Create gclient config
+        run: gclient config --unmanaged https://chromium.googlesource.com/devtools/devtools-frontend
+        working-directory: devtools
+
+      - name: Sync dependencies
+        run: gclient sync
+        working-directory: devtools/devtools-frontend
+
+      - name: Run lint checks
+        run: vpython3 third_party/node/node.py --output scripts/test/run_lint_check.mjs --lint-only
+        working-directory: devtools/devtools-frontend
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout depot_tools
+        run: git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+
+      - name: Add depot_tools to PATH
+        run: echo $(realpath depot_tools) >> $GITHUB_PATH
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          path: devtools/devtools-frontend
+
+      - name: Create gclient config
+        run: gclient config --unmanaged https://chromium.googlesource.com/devtools/devtools-frontend
+        working-directory: devtools
+
+      - name: Sync dependencies
+        run: gclient sync
+        working-directory: devtools/devtools-frontend
+
+      - name: Generate build files
+        run: gn gen out/Default
+        working-directory: devtools/devtools-frontend
+
+      - name: Build and run unit tests
+        run: autoninja -C out/Default test/run.js && vpython3 third_party/node/node.py --output scripts/run_on_target.mjs --skip-ninja gen/test/run.js
+        working-directory: devtools/devtools-frontend
