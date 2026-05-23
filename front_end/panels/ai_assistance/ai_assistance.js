@@ -5264,12 +5264,13 @@ async function makeLighthouseReportWidget(widgetData) {
   if (!reportEl) {
     return null;
   }
+  const snapshotReport = widgetData.data.snapshotReport;
   return {
     renderedWidget: html7`<div class="lighthouse-report-widget">${reportEl}</div>`,
     revealable: new Lighthouse.LighthousePanel.ActiveLighthouseReport(widgetData.data.report),
     accessibleRevealLabel: lockedString5(UIStringsNotTranslate4.revealLighthouse),
     title: lockedString5(UIStringsNotTranslate4.lighthouseReport),
-    jslogContext: "lighthouse-report-widget"
+    jslogContext: snapshotReport ? "lighthouse-snapshot-report-widget" : "lighthouse-report-widget"
   };
 }
 

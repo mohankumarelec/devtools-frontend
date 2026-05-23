@@ -2317,7 +2317,7 @@ var AccessibilityAgent = class extends AiAgent {
         const audits = new LighthouseFormatter().audits(report, "accessibility");
         return {
           result: { audits },
-          widgets: [{ name: "LIGHTHOUSE_REPORT", data: { report } }]
+          widgets: [{ name: "LIGHTHOUSE_REPORT", data: { report, snapshotReport: true } }]
         };
       }
     });
@@ -8854,8 +8854,20 @@ var ContextSelectionAgent = class _ContextSelectionAgent extends AiAgent {
         };
       },
       handler: async () => {
+        const allowedOriginResult = this.#allowedOrigin();
+        if ("blocked" in allowedOriginResult) {
+          return {
+            error: "Cross-origin access blocked due to navigation. Please start a new chat."
+          };
+        }
+        const origin = allowedOriginResult.origin;
         const files = [];
         for (const file of _ContextSelectionAgent.getUISourceCodes()) {
+          const fileUrl = file.url();
+          const fileOrigin = Common6.ParsedURL.ParsedURL.extractOrigin(fileUrl);
+          if (origin && fileOrigin !== origin) {
+            continue;
+          }
           files.push({
             file: file.fullDisplayName(),
             id: _ContextSelectionAgent.uiSourceCodeId.get(file)
@@ -8888,7 +8900,21 @@ var ContextSelectionAgent = class _ContextSelectionAgent extends AiAgent {
         };
       },
       handler: async (params) => {
-        const file = _ContextSelectionAgent.getUISourceCodes().find((file2) => _ContextSelectionAgent.uiSourceCodeId.get(file2) === params.id);
+        const allowedOriginResult = this.#allowedOrigin();
+        if ("blocked" in allowedOriginResult) {
+          return {
+            error: "Cross-origin access blocked due to navigation. Please start a new chat."
+          };
+        }
+        const origin = allowedOriginResult.origin;
+        const file = _ContextSelectionAgent.getUISourceCodes().find((file2) => {
+          if (_ContextSelectionAgent.uiSourceCodeId.get(file2) !== params.id) {
+            return false;
+          }
+          const fileUrl = file2.url();
+          const fileOrigin = Common6.ParsedURL.ParsedURL.extractOrigin(fileUrl);
+          return !origin || fileOrigin === origin;
+        });
         if (!file) {
           return {
             error: "Unable to find file."

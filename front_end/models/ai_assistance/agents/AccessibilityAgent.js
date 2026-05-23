@@ -236,7 +236,7 @@ export class AccessibilityAgent extends AiAgent {
                 const audits = new LighthouseFormatter().audits(report, 'accessibility');
                 return {
                     result: { audits },
-                    widgets: [{ name: 'LIGHTHOUSE_REPORT', data: { report } }],
+                    widgets: [{ name: 'LIGHTHOUSE_REPORT', data: { report, snapshotReport: true } }],
                 };
             }
         });
